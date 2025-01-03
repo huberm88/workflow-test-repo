@@ -22,7 +22,7 @@ jobs:
         run: node generateRandomString.js
 
       - name: Save random string as artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: random-string
           path: randomString.json
