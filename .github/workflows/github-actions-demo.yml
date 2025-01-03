@@ -79,7 +79,7 @@ jobs:
           ls -l previous-random-string 
 
       - name: Download current random string artifact 
-        uses: actions/download-artifact@v2 
+        uses: actions/download-artifact@v4 
         with: 
           name: random-string 
           path: ./current 
@@ -88,7 +88,8 @@ jobs:
         run: | 
           echo "Contents of current directory:" 
           ls -l ./current 
-          
+
       - name: Compare random strings 
         run: | 
-          echo "Comparing random strings..." diff ./current/randomString.json previous-random-string/randomString.json
+          echo "Comparing random strings..." 
+          diff ./current/randomString.json previous-random-string/randomString.json
