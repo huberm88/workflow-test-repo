@@ -72,13 +72,23 @@ jobs:
             fi
           fi
 
-      - name: Verify current random string file
-        run: ls -l randomString.json
 
-      - name: Verify previous random string file
-        run: ls -l previous-random-string/randomString.json
+      - name: Verify previous random string file 
+        run: | 
+          echo "Contents of previous-random-string directory:" 
+          ls -l previous-random-string 
 
-      - name: Compare random strings
-        run: |
-          echo "Comparing random strings..."
-          diff randomString.json previous-random-string/randomString.json
+      - name: Download current random string artifact 
+        uses: actions/download-artifact@v2 
+        with: 
+          name: random-string 
+          path: ./current 
+
+      - name: Verify current random string file 
+        run: | 
+          echo "Contents of current directory:" 
+          ls -l ./current 
+          
+      - name: Compare random strings 
+        run: | 
+          echo "Comparing random strings..." diff ./current/randomString.json previous-random-string/randomString.json
