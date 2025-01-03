@@ -1,18 +1,55 @@
-name: GitHub Actions Demo
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+name: Generate Random String
+
 on: [push]
+
 jobs:
-  Explore-GitHub-Actions:
+  generate:
     runs-on: ubuntu-latest
+
     steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      - name: Check out repository code
+      - name: Checkout code
         uses: actions/checkout@v4
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-      - name: List files in the repository
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run JavaScript to generate random string
+        run: node generateRandomString.js
+
+      - name: Save random string as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: random-string
+          path: randomString.json
+
+  compare:
+    runs-on: ubuntu-latest
+    needs: generate
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download previous random string
         run: |
-          ls ${{ github.workspace }}
-      - run: echo "🍏 This job's status is ${{ job.status }}."
+          echo "Fetching previous run artifacts..."
+          curl -s \
+            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            https://api.github.com/repos/<owner>/<repo>/actions/runs?branch=main&status=success \
+            | jq -r '.workflow_runs[1].artifacts_url' \
+            | xargs curl -s \
+            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            -o previous-artifacts.zip
+          
+          echo "Extracting previous artifacts..."
+          unzip previous-artifacts.zip -d previous-random-string/
+
+      - name: Compare random strings
+        run: |
+          echo "Comparing random strings..."
+          diff randomString.json previous-random-string/randomString.json
