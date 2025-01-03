@@ -18,8 +18,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run JavaScript to generate random string
-        run: node generateRandomString.js
+      - name: Run JavaScript to generate random string 
+        run: | 
+          node generateRandomString.js
+          ls -l randomString.json # Verify the file is created
 
       - name: Save random string as artifact
         uses: actions/upload-artifact@v4
