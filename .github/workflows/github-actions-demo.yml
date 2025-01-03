@@ -63,7 +63,7 @@ jobs:
               exit 0
             else
               echo "Artifact download URL: $download_url"
-              curl -L -o previous-artifacts.zip $download_url
+              curl -L -o previous-artifacts.zip -H "Authorization: token ${{ secrets.GH_TOKEN }}" $download_url
               
               echo "Extracting previous artifacts..."
               unzip previous-artifacts.zip -d previous-random-string/
