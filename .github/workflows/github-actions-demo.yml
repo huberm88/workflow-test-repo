@@ -39,10 +39,10 @@ jobs:
         run: |
           echo "Fetching previous run artifacts..."
           previous_artifacts_url=$(curl -s \
-            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-            https://api.github.com/repos/huberm88/workflow-test-repo/actions/runs?branch=main&status=success \
-            | jq -r '.workflow_runs[0] | select(. != null) | .artifacts_url')
-      
+          -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+          https://api.github.com/repos/huberm88/workflow-test-repo/actions/runs?branch=main&status=success \
+          | jq -r '.workflow_runs[0].artifacts_url')
+
           if [ -z "$previous_artifacts_url" ]; then
             echo "No previous successful runs found."
             exit 0
@@ -51,13 +51,12 @@ jobs:
             curl -s \
               -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
               $previous_artifacts_url \
-              -o previous-artifacts.zip
-      
+              | jq -r '.artifacts[0].archive_download_url' \
+              | xargs curl -L -o previous-artifacts.zip
+
             echo "Extracting previous artifacts..."
             unzip previous-artifacts.zip -d previous-random-string/
           fi
-      
-
       - name: Compare random strings
         run: |
           echo "Comparing random strings..."
