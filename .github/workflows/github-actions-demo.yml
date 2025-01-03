@@ -38,25 +38,38 @@ jobs:
       - name: Download previous random string
         run: |
           echo "Fetching previous run artifacts..."
-          previous_artifacts_url=$(curl -s \
-          -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-          https://api.github.com/repos/huberm88/workflow-test-repo/actions/runs?branch=feat/add-workflow&status=success \
-          | jq -r '.workflow_runs[0].artifacts_url')
-
+          api_response=$(curl -s \
+            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            https://api.github.com/repos/huberm88/workflow-test-repo/actions/runs?branch=main&status=success)
+      
+          echo "API response: $api_response"
+          
+          previous_artifacts_url=$(echo $api_response | jq -r '.workflow_runs[0].artifacts_url')
+      
           if [ -z "$previous_artifacts_url" ]; then
             echo "No previous successful runs found."
             exit 0
           else
             echo "Previous artifacts URL: $previous_artifacts_url"
-            curl -s \
+            artifacts_response=$(curl -s \
               -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-              $previous_artifacts_url \
-              | jq -r '.artifacts[0].archive_download_url' \
-              | xargs curl -L -o previous-artifacts.zip
-
-            echo "Extracting previous artifacts..."
-            unzip previous-artifacts.zip -d previous-random-string/
+              $previous_artifacts_url)
+      
+            echo "Artifacts response: $artifacts_response"
+            download_url=$(echo $artifacts_response | jq -r '.artifacts[0].archive_download_url')
+      
+            if [ -z "$download_url" ]; then
+              echo "No artifacts found in the previous run."
+              exit 0
+            else
+              echo "Artifact download URL: $download_url"
+              curl -L -o previous-artifacts.zip $download_url
+              
+              echo "Extracting previous artifacts..."
+              unzip previous-artifacts.zip -d previous-random-string/
+            fi
           fi
+      
       - name: Compare random strings
         run: |
           echo "Comparing random strings..."
