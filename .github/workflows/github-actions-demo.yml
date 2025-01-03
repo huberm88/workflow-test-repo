@@ -40,7 +40,7 @@ jobs:
           echo "Fetching previous run artifacts..."
           api_response=$(curl -s \
             -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-            https://api.github.com/repos/huberm88/workflow-test-repo/actions/runs?branch=feat/add-workflowmain&status=success)
+            https://api.github.com/repos/huberm88/workflow-test-repo/actions/runs?branch=feat/add-workflow&status=success)
           
           echo "API response: $api_response"
           
