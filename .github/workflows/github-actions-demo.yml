@@ -53,7 +53,7 @@ jobs:
           
           echo "API response: $api_response"
           
-          previous_run_conclusion=$(echo $api_response | jq -r '.workflow_runs[] | select(.status == "completed") | .conclusion' | head -n 1)
+          previous_run_conclusion=$(echo $api_response | jq -r '.workflow_runs[] | select(.status == "completed" and .conclusion != null and .name == "${{ github.workflow }}") | .conclusion' | head -n 1)
           echo "Previous run conclusion: $previous_run_conclusion"
           
           if [ "$previous_run_conclusion" == "success" ]; then
