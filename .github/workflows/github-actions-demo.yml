@@ -51,7 +51,6 @@ jobs:
             -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
             https://api.github.com/repos/huberm88/workflow-test-repo/actions/runs?branch=$branch_name&status=success)
           
-          echo "API response: $api_response"
           
           previous_run_conclusion=$(echo $api_response | jq -r '.workflow_runs[0].conclusion')
           echo "Previous run conclusion: $previous_run_conclusion"
@@ -71,7 +70,6 @@ jobs:
             -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
             https://api.github.com/repos/huberm88/workflow-test-repo/actions/runs?branch=$branch_name&status=success)
           
-          echo "API response: $api_response"
           
           previous_artifacts_url=$(echo $api_response | jq -r '.workflow_runs[0].artifacts_url')
           
