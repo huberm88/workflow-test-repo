@@ -37,10 +37,10 @@ jobs:
       - name: Install GitHub CLI
         run: sudo apt-get install -y gh
 
-      - name: Authenticate with GitHub CLI
+      - name: Verify authentication with GitHub CLI
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: gh auth login --with-token <<< "${GH_TOKEN}"
+        run: gh auth status
 
       - name: Check previous run status
         env:
