@@ -34,6 +34,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
       - name: Extract branch name
         id: extract_branch
         run: |
@@ -44,12 +47,13 @@ jobs:
           echo "::set-output name=branch_name::$branch_name"
 
       - name: Check previous run status
+        id: check_status
         run: |
           branch_name=${{ steps.extract_branch.outputs.branch_name }}
-          echo "Checking previous run status for branch: $branch_name"
+          echo "Checking previous run status for branch: $branch_name and workflow: ${{ github.workflow }}"
           api_response=$(curl -s \
             -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-            https://api.github.com/repos/huberm88/workflow-test-repo/actions/runs?branch=$branch_name)
+            https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=$branch_name&status=completed)
           
           echo "API response: $api_response"
           
@@ -58,24 +62,32 @@ jobs:
           
           if [ "$previous_run_conclusion" == "success" ]; then
             echo "Previous workflow run was successful."
+            echo "::set-output name=previous_run_failed::false"
           elif [ "$previous_run_conclusion" == "failure" ]; then
             echo "Previous workflow run failed."
+            echo "::set-output name=previous_run_failed::true"
           else
             echo "No previous completed runs found or conclusion is null."
+            echo "::set-output name=previous_run_failed::true"
             exit 0
           fi
+
+      - name: Set environment variable
+        run: |
+          echo "Setting environment variable..."
+          echo "PREVIOUS_RUN_FAILED=${{ steps.check_status.outputs.previous_run_failed }}" >> $GITHUB_ENV
 
       - name: Download previous random string
         run: |
           branch_name=${{ steps.extract_branch.outputs.branch_name }}
-          echo "Fetching previous run artifacts for branch: $branch_name"
+          echo "Fetching previous run artifacts for branch: $branch_name and workflow: ${{ github.workflow }}"
           api_response=$(curl -s \
             -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-            https://api.github.com/repos/huberm88/workflow-test-repo/actions/runs?branch=$branch_name&status=success)
+            https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=$branch_name&status=completed)
           
           echo "API response: $api_response"
           
-          previous_artifacts_url=$(echo $api_response | jq -r '.workflow_runs[] | select(.status == "completed") | .artifacts_url' | head -n 1)
+          previous_artifacts_url=$(echo $api_response | jq -r '.workflow_runs[] | select(.status == "completed" and .conclusion != null and .name == "${{ github.workflow }}") | .artifacts_url' | head -n 1)
           
           if [ -z "$previous_artifacts_url" ]; then
             echo "No previous successful runs found."
