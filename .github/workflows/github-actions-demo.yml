@@ -120,7 +120,7 @@ jobs:
       - name: Compare random strings
         run: |
           echo "Comparing random strings..."
-          diff_output=$(diff -u ./current/randomString.json previous-random-string/randomString.json || true)
+          diff_output=$(diff -u ./current/randomStringZZZZZZ.json previous-random-string/randomString.json || true)
           if [ -z "$diff_output" ]; then
             echo "No differences found."
           else
