@@ -15,16 +15,13 @@ jobs:
         with:
           node-version: '14'
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run JavaScript to generate random string 
-        run: | 
+      - name: Run JavaScript to generate random string
+        run: |
           node generateRandomString.js
-          ls -l randomString.json # Verify the file is created
+          ls -l randomString.json  # Verify the file is created
 
       - name: Save random string as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v2
         with:
           name: random-string
           path: randomString.json
@@ -37,13 +34,39 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Extract branch name
+        id: extract_branch
+        run: |
+          ref=${GITHUB_REF}
+          echo "Full ref: $ref"
+          branch_name=${ref#refs/heads/}
+          echo "Branch name: $branch_name"
+          echo "::set-output name=branch_name::$branch_name"
+
+      - name: Check previous run status
+        run: |
+          branch_name=${{ steps.extract_branch.outputs.branch_name }}
+          echo "Checking previous run status for branch: $branch_name"
+          api_response=$(curl -s \
+            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            https://api.github.com/repos/huberm88/workflow-test-repo/actions/runs?branch=$branch_name&status=success)
+          
+          echo "API response: $api_response"
+          
+          previous_run_conclusion=$(echo $api_response | jq -r '.workflow_runs[0].conclusion')
+          echo "Previous run conclusion: $previous_run_conclusion"
+          
+          if [ "$previous_run_conclusion" == "success" ]; then
+            echo "Previous workflow run was successful."
+          else
+            echo "No previous successful runs found."
+            exit 0
+          fi
+
       - name: Download previous random string
         run: |
-          echo "Fetching previous run artifacts..."
-          ref=${GITHUB_REF} 
-          echo "Full ref: $ref" 
-          branch_name=${ref#refs/heads/}
-          echo "branch_name: $branch_name"
+          branch_name=${{ steps.extract_branch.outputs.branch_name }}
+          echo "Fetching previous run artifacts for branch: $branch_name"
           api_response=$(curl -s \
             -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
             https://api.github.com/repos/huberm88/workflow-test-repo/actions/runs?branch=$branch_name&status=success)
@@ -76,24 +99,24 @@ jobs:
             fi
           fi
 
+      - name: Verify previous random string file
+        run: |
+          echo "Contents of previous-random-string directory:"
+          ls -l previous-random-string
 
-      - name: Verify previous random string file 
-        run: | 
-          echo "Contents of previous-random-string directory:" 
-          ls -l previous-random-string 
+      - name: Download current random string artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: random-string
+          path: ./current
 
-      - name: Download current random string artifact 
-        uses: actions/download-artifact@v4 
-        with: 
-          name: random-string 
-          path: ./current 
+      - name: Verify current random string file
+        run: |
+          echo "Contents of current directory:"
+          ls -l ./current
 
-      - name: Verify current random string file 
-        run: | 
-          echo "Contents of current directory:" 
-          ls -l ./current 
-
-      - name: Compare random strings 
-        run: | 
-          echo "Comparing random strings..." 
-          diff ./current/randomString.json previous-random-string/randomString.json
+      - name: Compare random strings
+        run: |
+          echo "Comparing random strings..."
+          diff_output=$(diff -u ./current/randomString.json previous-random-string/randomString.json || true)
+          if [ -z "$diff_output" ];
